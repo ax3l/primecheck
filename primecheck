@@ -21,11 +21,13 @@ elif opts.server:
 	ossl_out = ossl_out.decode("utf-8").replace('\n','').replace('<<<','\n').replace('>>>','\n')
 	for line in ossl_out.splitlines():
 		if 'ServerKeyExchange' in line:
-			line = re.sub("[ ]", "", line)
+			line = re.sub(" ", "", line)
 			line = re.sub("^.*ServerKeyExchange", "", line)
+			# first 8 chars: Header
 			len = gmpy2.mpz(line[8:12], 16)
+			# next 4 chars: length of following prime
 			line = line[12:12+int(len*2)]
-			print(line)
+			# hex to decimal
 			prime = gmpy2.mpz(line, 16)
 			break
 else:
