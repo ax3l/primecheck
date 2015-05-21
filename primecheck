@@ -12,15 +12,22 @@ parser.add_option("-p", "--port", dest="port", default=443, help="port (default 
 if opts.prime:
 	prime = gmpy2.mpz(opts.prime, 16)
 elif opts.server:
-	ossl_out = subprocess.check_output([os.path.dirname(sys.argv[0])+"/openssl-trace",
-		"s_client", "-trace",
+	ossl_out = subprocess.check_output(["openssl",
+		"s_client", "-msg",
 		"-servername", opts.server,
-		"-cipher", "DHE",
+		"-cipher", "EDH",
 		"-connect", opts.server+":"+str(opts.port)],
 		stdin=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-	for line in ossl_out.decode("utf-8").splitlines():
-		if 'dh_p' in line:
-			prime = gmpy2.mpz(re.sub(".*: ", "", line), 16)
+	ossl_out = ossl_out.decode("utf-8").replace('\n','').replace('<<<','\n').replace('>>>','\n')
+	for line in ossl_out.splitlines():
+		if 'ServerKeyExchange' in line:
+			line = re.sub("[ ]", "", line)
+			line = re.sub("^.*ServerKeyExchange", "", line)
+			len = gmpy2.mpz(line[8:12], 16)
+			line = line[12:12+int(len*2)]
+			print(line)
+			prime = gmpy2.mpz(line, 16)
+			break
 else:
 	parser.print_help()
 	sys.exit(1)
